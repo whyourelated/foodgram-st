@@ -17,7 +17,7 @@ from .filters import DishFilter
 from .permissions import IsAuthorOrReadOnly
 from .serializers import (
     ProductSerializer, DishSerializer, DishProductSerializer,
-    BookmarkSerializer, ShoppingListSerializer
+    BookmarkSerializer, ShoppingListSerializer, CustomUserSerializer
 )
 
 User = get_user_model()
