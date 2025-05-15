@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from recipes.models import Product, Dish, DishProduct, Bookmark, ShoppingList
+from recipes.models import Product, Dish, DishProduct, Bookmark, ShoppingList, Base64ImageField
 from accounts.models import Subscription
 from django.contrib.auth import get_user_model
 
@@ -23,7 +23,7 @@ class DishProductSerializer(serializers.ModelSerializer):
 class DishSerializer(serializers.ModelSerializer):
     creator = serializers.StringRelatedField(read_only=True)
     products = DishProductSerializer(source='dishproduct_set', many=True, read_only=True)
-    image = serializers.ImageField()
+    image = Base64ImageField()
 
     class Meta:
         model = Dish
