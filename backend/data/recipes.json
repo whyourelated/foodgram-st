@@ -7,7 +7,8 @@
       "title": "Омлет",
       "image": "dishes/omelet.jpg",
       "description": "Вкусный омлет на завтрак",
-      "cook_time": 10
+      "cook_time": 10,
+      "pub_date": "2024-03-15T12:00:00Z"
     }
   }
 ] 
