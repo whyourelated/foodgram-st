@@ -29,7 +29,7 @@ class Dish(models.Model):
     author = models.ForeignKey(
         User,
         on_delete=models.CASCADE,
-        related_name='dishes',
+        related_name='api_authors',
         verbose_name='Автор'
     )
     name = models.CharField('Название', max_length=200)

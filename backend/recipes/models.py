@@ -18,7 +18,10 @@ class Product(models.Model):  # Ingredient
 
 class Dish(models.Model):  # Recipe
     creator = models.ForeignKey(
-        User, on_delete=models.CASCADE, related_name='dishes', verbose_name='Автор'
+        User,
+        on_delete=models.CASCADE,
+        related_name='recipe_creators',
+        verbose_name='Создатель'
     )
     title = models.CharField(max_length=200, verbose_name='Название')
     image = models.ImageField(upload_to='dishes/', verbose_name='Картинка')
