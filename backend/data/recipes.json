@@ -1,0 +1,13 @@
+[
+  {
+    "model": "recipes.dish",
+    "pk": 1,
+    "fields": {
+      "creator": 1,
+      "title": "Омлет",
+      "image": "dishes/omelet.jpg",
+      "description": "Вкусный омлет на завтрак",
+      "cook_time": 10
+    }
+  }
+] 
