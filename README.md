@@ -16,38 +16,16 @@ Foodgram - это сервис для публикации рецептов. З�
 - Nginx
 - React
 
-## Как запустить проект на сервере
+## Как запустить проект локально
 
-### 1. Подготовка сервера
+### 1. Клонируем репозиторий
 ```bash
-# Подключаемся к серверу
-ssh username@your_server_ip
-
-# Обновляем систему
-sudo apt update && sudo apt upgrade -y
-
-# Устанавливаем Docker и Docker Compose
-sudo apt install docker.io docker-compose -y
-
-# Добавляем текущего пользователя в группу docker
-sudo usermod -aG docker $USER
-
-# Перезаходим в систему для применения изменений
-exit
-ssh username@your_server_ip
-```
-
-### 2. Клонируем репозиторий
-```bash
-# Создаем директорию для проекта
-mkdir foodgram
-cd foodgram
-
 # Клонируем репозиторий
-git clone https://github.com/your-username/foodgram-st.git .
+git clone https://github.com/whyourelated/foodgram-st.git
+cd foodgram-st
 ```
 
-### 3. Настраиваем переменные окружения
+### 2. Настраиваем переменные окружения
 ```bash
 # Переходим в директорию с docker-compose
 cd infra
@@ -61,25 +39,16 @@ nano .env
 DB_ENGINE=django.db.backends.postgresql
 DB_NAME=postgres
 POSTGRES_USER=postgres
-POSTGRES_PASSWORD=your_secure_password
+POSTGRES_PASSWORD=postgres
 DB_HOST=db
 DB_PORT=5432
 
 SECRET_KEY=your_secret_key
-DEBUG=False
-ALLOWED_HOSTS=your_domain_or_ip
+DEBUG=True
+ALLOWED_HOSTS=localhost,127.0.0.1
 ```
 
-### 4. Настраиваем домен (если есть)
-```bash
-# Устанавливаем certbot для получения SSL-сертификата
-sudo apt install certbot python3-certbot-nginx -y
-
-# Получаем SSL-сертификат
-sudo certbot --nginx -d your_domain.com
-```
-
-### 5. Запускаем проект
+### 3. Запускаем проект
 ```bash
 # Собираем и запускаем контейнеры
 docker-compose up -d
@@ -94,27 +63,10 @@ docker-compose exec backend python manage.py createsuperuser
 docker-compose exec backend python manage.py loaddata
 ```
 
-### 6. Проверяем работу проекта
-- Откройте в браузере http://your_domain_or_ip
-- Проверьте работу админ-панели: http://your_domain_or_ip/admin
-- Проверьте API документацию: http://your_domain_or_ip/api/docs
-
-## Как обновить проект
-```bash
-# Подключаемся к серверу
-ssh username@your_server_ip
-
-# Переходим в директорию проекта
-cd foodgram
-
-# Получаем изменения из репозитория
-git pull
-
-# Пересобираем и перезапускаем контейнеры
-cd infra
-docker-compose down
-docker-compose up -d --build
-```
+### 4. Проверяем работу проекта
+- Откройте в браузере http://localhost
+- Проверьте работу админ-панели: http://localhost/admin
+- Проверьте API документацию: http://localhost/api/docs
 
 ## Тестовые данные
 После загрузки тестовых данных будут созданы:
@@ -142,15 +94,6 @@ docker-compose exec db psql -U postgres
 docker-compose down -v
 docker-compose up -d
 docker-compose exec backend python manage.py migrate
-```
-
-### 3. Проблемы с правами доступа
-```bash
-# Проверяем права на директории
-ls -la
-
-# Исправляем права
-sudo chown -R $USER:$USER .
 ```
 
 ## Полезные команды
@@ -185,25 +128,5 @@ docker-compose exec backend python manage.py createsuperuser
 docker-compose exec backend python manage.py collectstatic
 ```
 
-## Безопасность
-- Регулярно обновляйте систему и пакеты
-- Используйте сложные пароли
-- Настройте файрвол
-- Используйте SSL-сертификат
-- Регулярно делайте резервные копии базы данных
-
-## Резервное копирование
-```bash
-# Создаем бэкап базы данных
-docker-compose exec db pg_dump -U postgres > backup.sql
-
-# Восстанавливаем из бэкапа
-cat backup.sql | docker-compose exec -T db psql -U postgres
-```
-
 ## Автор
-[Ваше имя] - разработчик проекта Foodgram
-
-## Лицензия
-MIT License
-
+whyourelated - разработчик проекта Foodgram
