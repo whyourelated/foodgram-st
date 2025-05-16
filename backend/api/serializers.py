@@ -34,13 +34,27 @@ class DishSerializer(serializers.ModelSerializer):
     creator = serializers.StringRelatedField(read_only=True)
     products = DishProductSerializer(source='dishproduct_set', many=True, read_only=True)
     image = Base64ImageField()
+    is_favorited = serializers.SerializerMethodField()
+    is_in_shopping_cart = serializers.SerializerMethodField()
 
     class Meta:
         model = Dish
         fields = (
             'id', 'creator', 'title', 'image', 'description',
-            'products', 'cook_time'
+            'products', 'cook_time', 'is_favorited', 'is_in_shopping_cart'
         )
+
+    def get_is_favorited(self, obj):
+        user = self.context.get('request').user
+        if user.is_anonymous:
+            return False
+        return Bookmark.objects.filter(user=user, dish=obj).exists()
+
+    def get_is_in_shopping_cart(self, obj):
+        user = self.context.get('request').user
+        if user.is_anonymous:
+            return False
+        return ShoppingList.objects.filter(user=user, dish=obj).exists()
 
 class BookmarkSerializer(serializers.ModelSerializer):
     class Meta:
@@ -58,6 +72,14 @@ class SubscriptionSerializer(serializers.ModelSerializer):
         fields = ('id', 'subscriber', 'author')
 
 class CustomUserSerializer(serializers.ModelSerializer):
+    is_subscribed = serializers.SerializerMethodField()
+
     class Meta:
         model = User
-        fields = ('id', 'username', 'email', 'first_name', 'last_name') 
+        fields = ('id', 'username', 'email', 'first_name', 'last_name', 'is_subscribed')
+
+    def get_is_subscribed(self, obj):
+        user = self.context.get('request').user
+        if user.is_anonymous:
+            return False
+        return Subscription.objects.filter(subscriber=user, author=obj).exists() 
