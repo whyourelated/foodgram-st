@@ -4,7 +4,7 @@ from django.http import HttpResponse
 from django.shortcuts import get_object_or_404
 from djoser.views import UserViewSet
 from recipes.models import (
-    Product, Dish, DishProduct, Bookmark, ShoppingList, Subscription
+    Product, Dish, DishProduct, Bookmark, ShoppingList
 )
 from rest_framework import status, viewsets
 from rest_framework.decorators import action
@@ -19,6 +19,7 @@ from .serializers import (
     ProductSerializer, DishSerializer, DishProductSerializer,
     BookmarkSerializer, ShoppingListSerializer, CustomUserSerializer
 )
+from accounts.models import Subscription
 
 User = get_user_model()
 
