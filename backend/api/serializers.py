@@ -1,85 +1,64 @@
 from rest_framework import serializers
-from recipes.models import Product, Dish, DishProduct, Bookmark, ShoppingList
-from accounts.models import Subscription
+from recipes.models import Ingredient, Recipe, RecipeIngredient, Favorite, ShoppingList
+from accounts.models import Follow
 from django.contrib.auth import get_user_model
-import base64
-from django.core.files.base import ContentFile
+from drf_extra_fields.fields import Base64ImageField
 
 User = get_user_model()
 
-class Base64ImageField(serializers.ImageField):
-    def to_internal_value(self, data):
-        if isinstance(data, str) and data.startswith('data:image'):
-            format, imgstr = data.split(';base64,')
-            ext = format.split('/')[-1]
-            data = ContentFile(base64.b64decode(imgstr), name=f'temp.{ext}')
-        return super().to_internal_value(data)
-
-class ProductSerializer(serializers.ModelSerializer):
+class IngredientSerializer(serializers.ModelSerializer):
     class Meta:
-        model = Product
-        fields = ('id', 'name', 'unit')
+        model = Ingredient
+        fields = ('id', 'name', 'measurement_unit')
 
-class DishProductSerializer(serializers.ModelSerializer):
-    product = ProductSerializer(read_only=True)
-    product_id = serializers.PrimaryKeyRelatedField(
-        queryset=Product.objects.all(), source='product', write_only=True
+class RecipeIngredientSerializer(serializers.ModelSerializer):
+    id = serializers.PrimaryKeyRelatedField(
+        queryset=Ingredient.objects.all(), source='ingredient'
     )
+    amount = serializers.IntegerField(min_value=1)
 
     class Meta:
-        model = DishProduct
-        fields = ('id', 'product', 'product_id', 'amount')
+        model = RecipeIngredient
+        fields = ('id', 'amount')
 
-class DishSerializer(serializers.ModelSerializer):
-    creator = serializers.StringRelatedField(read_only=True)
-    products = DishProductSerializer(source='dishproduct_set', many=True, read_only=True)
+class RecipeSerializer(serializers.ModelSerializer):
+    author = serializers.StringRelatedField(read_only=True)
+    ingredients = RecipeIngredientSerializer(many=True)
     image = Base64ImageField()
     is_favorited = serializers.SerializerMethodField()
     is_in_shopping_cart = serializers.SerializerMethodField()
 
     class Meta:
-        model = Dish
+        model = Recipe
         fields = (
-            'id', 'creator', 'title', 'image', 'description',
-            'products', 'cook_time', 'is_favorited', 'is_in_shopping_cart'
+            'id', 'author', 'name', 'image', 'text',
+            'ingredients', 'cooking_time', 'is_favorited', 'is_in_shopping_cart'
         )
 
-    def get_is_favorited(self, obj):
+    def get_is_favorited(self, recipe):
         user = self.context.get('request').user
-        if user.is_anonymous:
-            return False
-        return Bookmark.objects.filter(user=user, dish=obj).exists()
+        return not user.is_anonymous and Favorite.objects.filter(
+            user=user, recipe=recipe
+        ).exists()
 
-    def get_is_in_shopping_cart(self, obj):
+    def get_is_in_shopping_cart(self, recipe):
         user = self.context.get('request').user
-        if user.is_anonymous:
-            return False
-        return ShoppingList.objects.filter(user=user, dish=obj).exists()
+        return not user.is_anonymous and ShoppingList.objects.filter(
+            user=user, recipe=recipe
+        ).exists()
 
-class BookmarkSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = Bookmark
-        fields = ('id', 'user', 'dish')
-
-class ShoppingListSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = ShoppingList
-        fields = ('id', 'user', 'dish')
-
-class SubscriptionSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = Subscription
-        fields = ('id', 'subscriber', 'author')
-
-class CustomUserSerializer(serializers.ModelSerializer):
+class UserSerializer(serializers.ModelSerializer):
     is_subscribed = serializers.SerializerMethodField()
 
     class Meta:
         model = User
-        fields = ('id', 'username', 'email', 'first_name', 'last_name', 'is_subscribed')
+        fields = (
+            'id', 'username', 'email', 'first_name', 
+            'last_name', 'is_subscribed'
+        )
 
-    def get_is_subscribed(self, obj):
+    def get_is_subscribed(self, author):
         user = self.context.get('request').user
-        if user.is_anonymous:
-            return False
-        return Subscription.objects.filter(subscriber=user, author=obj).exists() 
+        return not user.is_anonymous and Follow.objects.filter(
+            user=user, author=author
+        ).exists() 
