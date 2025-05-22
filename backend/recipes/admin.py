@@ -1,7 +1,29 @@
 from django.contrib import admin
 from django.utils.safestring import mark_safe
 from django.db.models import Count, Avg
-from .models import Ingredient, Recipe, RecipeIngredient, Favorite, ShoppingList
+from django.contrib.auth import get_user_model
+from .models import Ingredient, Recipe, RecipeIngredient, Favorite, ShoppingList, User, Follow
+
+User = get_user_model()
+
+@admin.register(User)
+class UserAdmin(admin.ModelAdmin):
+    list_display = ('username', 'email', 'first_name', 'last_name', 
+                   'recipes_count', 'followers_count', 'following_count')
+    search_fields = ('username', 'email', 'first_name', 'last_name')
+    list_filter = ('is_staff', 'is_active', 'date_joined')
+
+    def recipes_count(self, user):
+        return user.recipes.count()
+    recipes_count.short_description = 'Количество рецептов'
+
+    def followers_count(self, user):
+        return user.followers.count()
+    followers_count.short_description = 'Подписчики'
+
+    def following_count(self, user):
+        return user.following.count()
+    following_count.short_description = 'Подписки'
 
 @admin.register(Ingredient)
 class IngredientAdmin(admin.ModelAdmin):

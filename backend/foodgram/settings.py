@@ -20,7 +20,6 @@ INSTALLED_APPS = [
     'rest_framework.authtoken',
     'django_filters',
     'api.apps.ApiConfig',
-    'accounts.apps.AccountsConfig',
     'recipes.apps.RecipesConfig',
 ]
 
@@ -95,7 +94,7 @@ MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
-AUTH_USER_MODEL = 'accounts.User'
+AUTH_USER_MODEL = 'recipes.User'
 
 REST_FRAMEWORK = {
     'DEFAULT_PERMISSION_CLASSES': [
