@@ -3,6 +3,7 @@ from recipes.models import Ingredient, Recipe, RecipeIngredient, Favorite, Shopp
 from accounts.models import Follow
 from django.contrib.auth import get_user_model
 from drf_extra_fields.fields import Base64ImageField
+from djoser.serializers import UserSerializer as DjoserUserSerializer 
 
 User = get_user_model()
 
@@ -21,10 +22,9 @@ class RecipeIngredientSerializer(serializers.ModelSerializer):
         model = RecipeIngredient
         fields = ('id', 'amount')
 
-class RecipeSerializer(serializers.ModelSerializer):
+class RecipeReadSerializer(serializers.ModelSerializer):
     author = serializers.StringRelatedField(read_only=True)
-    ingredients = RecipeIngredientSerializer(many=True)
-    image = Base64ImageField()
+    ingredients = RecipeIngredientSerializer(many=True, read_only=True)
     is_favorited = serializers.SerializerMethodField()
     is_in_shopping_cart = serializers.SerializerMethodField()
 
@@ -34,6 +34,7 @@ class RecipeSerializer(serializers.ModelSerializer):
             'id', 'author', 'name', 'image', 'text',
             'ingredients', 'cooking_time', 'is_favorited', 'is_in_shopping_cart'
         )
+        read_only_fields = fields
 
     def get_is_favorited(self, recipe):
         user = self.context.get('request').user
@@ -47,18 +48,49 @@ class RecipeSerializer(serializers.ModelSerializer):
             user=user, recipe=recipe
         ).exists()
 
-class UserSerializer(serializers.ModelSerializer):
-    is_subscribed = serializers.SerializerMethodField()
+class RecipeWriteSerializer(serializers.ModelSerializer):
+    ingredients = RecipeIngredientSerializer(many=True)
+    image = Base64ImageField()
 
     class Meta:
-        model = User
+        model = Recipe
         fields = (
-            'id', 'username', 'email', 'first_name', 
-            'last_name', 'is_subscribed'
+            'id', 'name', 'image', 'text',
+            'ingredients', 'cooking_time'
         )
+
+    def create(self, validated_data):
+        ingredients = validated_data.pop('ingredients')
+        recipe = Recipe.objects.create(**validated_data)
+        self._save_ingredients(recipe, ingredients)
+        return recipe
+
+    def update(self, instance, validated_data):
+        ingredients = validated_data.pop('ingredients')
+        for attr, value in validated_data.items():
+            setattr(instance, attr, value)
+        instance.save()
+        instance.ingredients.clear()
+        self._save_ingredients(instance, ingredients)
+        return instance
+
+    def _save_ingredients(self, recipe, ingredients):
+        for item in ingredients:
+            RecipeIngredient.objects.create(
+                recipe=recipe,
+                ingredient=item['ingredient'],
+                amount=item['amount']
+            )
+
+class UserSerializer(DjoserUserSerializer):
+    is_subscribed = serializers.SerializerMethodField(read_only=True)
+
+    class Meta(DjoserUserSerializer.Meta):
+        fields = DjoserUserSerializer.Meta.fields + ('is_subscribed',)
+        read_only_fields = fields
 
     def get_is_subscribed(self, author):
         user = self.context.get('request').user
         return not user.is_anonymous and Follow.objects.filter(
             user=user, author=author
-        ).exists() 
+        ).exists()

@@ -9,18 +9,21 @@ class Command(BaseCommand):
         parser.add_argument('json_path', type=str, help='Путь к JSON-файлу с ингредиентами')
 
     def handle(self, *args, **options):
+        json_path = options['json_path']
         try:
-            with open(options['json_path'], encoding='utf-8') as f:
-                ingredients = [
-                    Ingredient(**item)
-                    for item in json.load(f)
-                    if all(key in item for key in ('name', 'measurement_unit'))
-                ]
-            Ingredient.objects.bulk_create(ingredients, ignore_conflicts=True)
+            with open(json_path, encoding='utf-8') as f:
+                Ingredient.objects.bulk_create(
+                    (
+                        Ingredient(**item)
+                        for item in json.load(f)
+                    ),
+                    ignore_conflicts=True
+                )
+            total = Ingredient.objects.count()
             self.stdout.write(
-                self.style.SUCCESS(f'Импортировано {len(ingredients)} ингредиентов.')
+                self.style.SUCCESS(f'Ингредиенты успешно импортированы из {json_path}. Всего в базе: {total}.')
             )
         except Exception as e:
-            self.stdout.write(
-                self.style.ERROR(f'Ошибка при импорте: {str(e)}')
-            ) 
+            self.stderr.write(
+                self.style.ERROR(f'Ошибка при импорте из {json_path}: {e}')
+            )
