@@ -61,32 +61,33 @@ class RecipeWriteSerializer(serializers.ModelSerializer):
 
     def create(self, validated_data):
         ingredients = validated_data.pop('ingredients')
-        recipe = Recipe.objects.create(**validated_data)
+        recipe = super().create(validated_data)
         self._save_ingredients(recipe, ingredients)
         return recipe
 
     def update(self, instance, validated_data):
         ingredients = validated_data.pop('ingredients')
-        for attr, value in validated_data.items():
-            setattr(instance, attr, value)
-        instance.save()
+        instance = super().update(instance, validated_data)
         instance.ingredients.clear()
         self._save_ingredients(instance, ingredients)
         return instance
 
     def _save_ingredients(self, recipe, ingredients):
-        for item in ingredients:
-            RecipeIngredient.objects.create(
+        recipe_ingredients = [
+            RecipeIngredient(
                 recipe=recipe,
                 ingredient=item['ingredient'],
                 amount=item['amount']
             )
+            for item in ingredients
+        ]
+        RecipeIngredient.objects.bulk_create(recipe_ingredients)
 
 class UserSerializer(DjoserUserSerializer):
     is_subscribed = serializers.SerializerMethodField(read_only=True)
 
     class Meta(DjoserUserSerializer.Meta):
-        fields = DjoserUserSerializer.Meta.fields + ('is_subscribed',)
+        fields = DjoserUserSerializer.Meta.fields + ('is_subscribed', 'avatar')
         read_only_fields = fields
 
     def get_is_subscribed(self, author):
@@ -94,3 +95,37 @@ class UserSerializer(DjoserUserSerializer):
         return not user.is_anonymous and Follow.objects.filter(
             user=user, author=author
         ).exists()
+
+class SubscriptionRecipeSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Recipe
+        fields = ('id', 'name', 'image', 'cooking_time')
+
+class SubscriptionSerializer(UserSerializer):
+    recipes = serializers.SerializerMethodField()
+    recipes_count = serializers.SerializerMethodField()
+
+    class Meta(UserSerializer.Meta):
+        fields = UserSerializer.Meta.fields + ('recipes', 'recipes_count')
+
+    def get_recipes(self, author):
+        request = self.context.get('request')
+        recipes_limit = request.query_params.get('recipes_limit')
+        recipes = author.recipes.all()
+        if recipes_limit:
+            recipes = recipes[:int(recipes_limit)]
+        return SubscriptionRecipeSerializer(recipes, many=True).data
+
+    def get_recipes_count(self, author):
+        return author.recipes.count()
+
+class UserProfileSerializer(UserSerializer):
+    recipes = serializers.SerializerMethodField()
+
+    class Meta(UserSerializer.Meta):
+        fields = UserSerializer.Meta.fields + ('recipes',)
+
+    def get_recipes(self, author):
+        request = self.context.get('request')
+        recipes = author.recipes.all()
+        return RecipeReadSerializer(recipes, many=True, context={'request': request}).data
